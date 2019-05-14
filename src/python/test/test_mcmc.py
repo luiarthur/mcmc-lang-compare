@@ -7,6 +7,8 @@ sys.path.append('../')
 import mcmc
 import distributions as dist
 
+# Note that factories are required for performance
+# See: https://numba.pydata.org/numba-doc/dev/user/faq.html
 @numba.njit
 def lpdf_std_normal(x):
     return mcmc.lpdf_normal(x, 0, 1)
