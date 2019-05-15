@@ -1,11 +1,11 @@
 import numba
 import numpy as np
-import time
 
 import sys
 sys.path.append('../')
 import mcmc
 import distributions as dist
+import Timer
 
 # Note that factories are required for performance
 # See: https://numba.pydata.org/numba-doc/dev/user/faq.html
@@ -13,27 +13,61 @@ import distributions as dist
 def lpdf_std_normal(x):
     return mcmc.lpdf_normal(x, 0, 1)
 
+@numba.njit
+def lpdf_exp_1(x):
+    return -x
+
+@numba.njit
+def lpdf_beta_2_3(x):
+    return (2-1) * np.log(x) + (3-1) * np.log1p(-x)
+
+
 @numba.jit
 def sample_std_normal(n):
     tuner = mcmc.Tuner(1.0)
-
     xs = np.zeros(n)
     x = 0.0
     for b in range(n):
         x = mcmc.ametropolis(x, dist.Normal(0, 1).lpdf, tuner)
         # x = mcmc.ametropolis(x, lpdf_std_normal, tuner) # faster
         xs[b] = x
-    
     return xs
+
+@numba.jit
+def sample_exp(n):
+    tuner = mcmc.Tuner(1.0)
+    xs = np.zeros(n)
+    x = 1.0
+    for b in range(n):
+        x = mcmc.ametropolis_positive_var(x, lpdf_exp_1, tuner)
+        xs[b] = x
+    return xs
+
+@numba.jit
+def sample_beta(n):
+    tuner = mcmc.Tuner(1.0)
+    xs = np.zeros(n)
+    x = .5
+    for b in range(n):
+        x = mcmc.ametropolis_unit_var(x, lpdf_beta_2_3, tuner)
+        xs[b] = x
+    return xs
+
+
 
 print('compile...')
 x = sample_std_normal(1)
+x = sample_exp(1)
+x = sample_beta(1)
 
 print('time...')
 B = int(1e6)
-tic = time.time()
-x = sample_std_normal(B)
-toc = time.time()
+with Timer.Timer('std normal', digits=3): # as fast as julia :)
+    z_draws = sample_std_normal(B)
 
-elapsed_time = (toc - tic)
-print('elapsed time: {}'.format(elapsed_time)) # same speed as julia :)
+with Timer.Timer('exp', digits=3):
+    exp_draws = sample_exp(B)
+
+with Timer.Timer('beta', digits=3):
+    beta_draws = sample_beta(B)
+

@@ -78,13 +78,50 @@ def lpdf_normal(x, m, s):
     return -0.5 * np.log(2*np.pi) - np.log(s) - 0.5 * z**2
 
 @numba.njit
+def log_jacobian_log_x(log_x, x):
+    return log_x
+
+@numba.njit
+def log_jacobian_logit_x(logit_x, x):
+    return np.log(x) + np.log1p(-x)
+
+@numba.njit
 def lpdf_log_x(log_x, lpdf):
-    log_jacobian = log_x
-    return lpdf(x) + log_jacobian
+    x = np.exp(log_x)
+    return lpdf(x) + log_jacobian_log_x(log_x, x)
 
 @numba.njit
 def lpdf_logit_x(logit_x, lpdf):
     x = sigmoid(logit_x)
-    log_jacobian = np.log(x) + np.log1p(-x)
-    return lpdf(x) + log_jacobian
+    return lpdf(x) + log_jacobian_logit_x(logit_x, x)
 
+@numba.njit
+def ametropolis_positive_var(x, log_prob, tuner):
+    log_x = np.log(x)
+
+    # From metropolis_base
+    log_proposal = tuner.proposal_sd * np.random.randn() + log_x
+    acceptance_log_prob = lpdf_log_x(log_proposal, log_prob)
+    acceptance_log_prob -= lpdf_log_x(log_x, log_prob)
+    accept = acceptance_log_prob > np.log(np.random.rand())
+    if accept:
+        x = np.exp(log_proposal)
+    tuner.update(accept)
+
+    return x
+
+@numba.njit
+def ametropolis_unit_var(x, log_prob, tuner):
+    logit_x = logit(x)
+
+    # From metropolis_base
+    logit_proposal = tuner.proposal_sd * np.random.randn() + logit_x
+    acceptance_log_prob = lpdf_logit_x(logit_proposal, log_prob)
+    acceptance_log_prob -= lpdf_logit_x(logit_x, log_prob)
+    accept = acceptance_log_prob > np.log(np.random.rand())
+    if accept:
+        x = sigmoid(logit_proposal)
+    tuner.update(accept)
+
+    return x
+ 
