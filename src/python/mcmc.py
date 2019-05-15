@@ -86,42 +86,30 @@ def log_jacobian_logit_x(logit_x, x):
     return np.log(x) + np.log1p(-x)
 
 @numba.njit
-def lpdf_log_x(log_x, lpdf):
-    x = np.exp(log_x)
-    return lpdf(x) + log_jacobian_log_x(log_x, x)
+def ametropolis_transformed_var(x, to_real, to_x, log_prob, log_jacobian, tuner):
+    real_x = to_real(x)
 
-@numba.njit
-def lpdf_logit_x(logit_x, lpdf):
-    x = sigmoid(logit_x)
-    return lpdf(x) + log_jacobian_logit_x(logit_x, x)
+    def lpdf_real_x(rx):
+        xx = to_x(rx)
+        return log_prob(xx) + log_jacobian(rx, xx)
+
+    # From metropolis_base
+    real_proposal = tuner.proposal_sd * np.random.randn() + real_x
+    acceptance_log_prob = lpdf_real_x(real_proposal) - lpdf_real_x(real_x)
+    accept = acceptance_log_prob > np.log(np.random.rand())
+    tuner.update(accept)
+
+    if accept:
+        x = to_x(real_proposal)
+
+    return x
 
 @numba.njit
 def ametropolis_positive_var(x, log_prob, tuner):
-    log_x = np.log(x)
-
-    # From metropolis_base
-    log_proposal = tuner.proposal_sd * np.random.randn() + log_x
-    acceptance_log_prob = lpdf_log_x(log_proposal, log_prob)
-    acceptance_log_prob -= lpdf_log_x(log_x, log_prob)
-    accept = acceptance_log_prob > np.log(np.random.rand())
-    if accept:
-        x = np.exp(log_proposal)
-    tuner.update(accept)
-
-    return x
+    return ametropolis_transformed_var(x, np.log, np.exp,
+                                       log_prob, log_jacobian_log_x, tuner)
 
 @numba.njit
 def ametropolis_unit_var(x, log_prob, tuner):
-    logit_x = logit(x)
-
-    # From metropolis_base
-    logit_proposal = tuner.proposal_sd * np.random.randn() + logit_x
-    acceptance_log_prob = lpdf_logit_x(logit_proposal, log_prob)
-    acceptance_log_prob -= lpdf_logit_x(logit_x, log_prob)
-    accept = acceptance_log_prob > np.log(np.random.rand())
-    if accept:
-        x = sigmoid(logit_proposal)
-    tuner.update(accept)
-
-    return x
- 
+    return ametropolis_transformed_var(x, logit, sigmoid,
+                                       log_prob, log_jacobian_logit_x, tuner)

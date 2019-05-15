@@ -23,7 +23,8 @@ def lpdf_beta_2_3(x):
 
 
 @numba.jit
-def sample_std_normal(n):
+def sample_std_normal(n, seed=1):
+    np.random.seed(seed)
     tuner = mcmc.Tuner(1.0)
     xs = np.zeros(n)
     x = 0.0
@@ -34,7 +35,8 @@ def sample_std_normal(n):
     return xs
 
 @numba.jit
-def sample_exp(n):
+def sample_exp(n, seed=1):
+    np.random.seed(seed)
     tuner = mcmc.Tuner(1.0)
     xs = np.zeros(n)
     x = 1.0
@@ -44,7 +46,8 @@ def sample_exp(n):
     return xs
 
 @numba.jit
-def sample_beta(n):
+def sample_beta(n, seed=1):
+    np.random.seed(seed)
     tuner = mcmc.Tuner(1.0)
     xs = np.zeros(n)
     x = .5
@@ -54,20 +57,28 @@ def sample_beta(n):
     return xs
 
 
+if __name__ == '__main__':
+    print('compile...')
+    x = sample_std_normal(1)
+    x = sample_exp(1)
+    x = sample_beta(1)
 
-print('compile...')
-x = sample_std_normal(1)
-x = sample_exp(1)
-x = sample_beta(1)
+    thresh = 1e-2
 
-print('time...')
-B = int(1e6)
-with Timer.Timer('std normal', digits=3): # as fast as julia :)
-    z_draws = sample_std_normal(B)
+    print('time...')
+    B = int(1e6)
+    with Timer.Timer('std normal', digits=3): # as fast as julia :)
+        z_draws = sample_std_normal(B)
+        assert abs(z_draws.mean()) < thresh
+        assert abs(z_draws.std() - 1) < thresh
 
-with Timer.Timer('exp', digits=3):
-    exp_draws = sample_exp(B)
+    with Timer.Timer('exp', digits=3):
+        exp_draws = sample_exp(B)
+        assert abs(exp_draws.mean() - 1) < thresh
+        assert abs(exp_draws.std() - 1) < thresh
 
-with Timer.Timer('beta', digits=3):
-    beta_draws = sample_beta(B)
+    with Timer.Timer('beta', digits=3):
+        beta_draws = sample_beta(B)
+        assert abs(beta_draws.mean() - .4) < thresh
+        assert abs(beta_draws.std() - .2) < thresh
 
