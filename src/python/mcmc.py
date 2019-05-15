@@ -78,20 +78,13 @@ def lpdf_normal(x, m, s):
     return -0.5 * np.log(2*np.pi) - np.log(s) - 0.5 * z**2
 
 @numba.njit
-def log_jacobian_log_x(log_x):
-    return log_x
-
-@numba.njit
-def log_jacobian_logit_x(x):
-    return np.log(x) + np.log1p(-x)
-
-@numba.njit
 def lpdf_log_x(log_x, lpdf):
-    x = np.exp(log_x)
-    return lpdf(x) + log_jacobian_log_x(log_x)
+    log_jacobian = log_x
+    return lpdf(x) + log_jacobian
 
 @numba.njit
 def lpdf_logit_x(logit_x, lpdf):
     x = sigmoid(logit_x)
-    return lpdf(x) + log_jacobian_logit_x(x)
+    log_jacobian = np.log(x) + np.log1p(-x)
+    return lpdf(x) + log_jacobian
 
