@@ -126,7 +126,7 @@ def fit(init, data, niter=1000, burn=1000, print_freq=100):
 
 if __name__ == '__main__':
     # Path to simulated data
-    path_to_simdat = '../../dat/dat.txt'
+    path_to_simdat = '../../../dat/dat.txt'
 
     # Read simulated data
     simdat = read_simdat(path_to_simdat)
