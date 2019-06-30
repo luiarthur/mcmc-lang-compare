@@ -111,6 +111,7 @@ end # Model
 
 ### MAIN ###
 include("MCMC/MCMC.jl")
+using Distributions
 using PyCall
 plt = pyimport("matplotlib.pyplot")
 
