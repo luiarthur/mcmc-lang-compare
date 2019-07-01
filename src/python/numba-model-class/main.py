@@ -94,22 +94,20 @@ class Model():
     def update_b2(self):
         self.state.b2 = mcmc.ametropolis(self.state.b2, self.logprob_b2, self.tuners.b2)
   
+    def fit(self, niter=1000, nburn=1000, print_freq=100):
+        out = []
 
-def fit(model, niter=1000, nburn=1000, print_freq=100):
-    out = []
+        for i in range(niter + nburn):
+            if (i + 1) % print_freq == 0:
+                print(i + 1, '/', (niter + nburn))
 
-    for i in range(niter + nburn):
-        if (i + 1) % print_freq == 0:
-            print('\r{}/{}'.format(i+1, niter+nburn), end='')
-        if i + 1 == (niter + nburn):
-            print()
+            self.update()
+            curr = {'b0': self.state.b0, 'b1': self.state.b1, 'b2': self.state.b2}
 
-        model.update()
-        curr = {'b0': model.state.b0, 'b1': model.state.b1, 'b2': model.state.b2}
-        if i >= nburn:
-            out.append(curr)
-
-    return out
+            if i >= nburn:
+                out.append(curr)
+        
+        return out
  
  
 
@@ -124,11 +122,11 @@ if __name__ == '__main__':
     N = x.shape[0]
     
     # COMPILE
-    model = Model(State(0, 0, 0), Data(x, y), 1.0)
-    _ = fit(model, 1, 1, 10)
+    model = Model(State(0, 0, 0), Data(x, y), 0.1)
+    _ = model.fit(1, 1, 10)
 
     with Timer.Timer("MCMC", digits=3):
-        out = fit(model, 1000, 1000, 100)
+        out = model.fit(1000, 1000, 100)
     print('Done')
 
     b0 = np.array([s['b0'] for s in out])
