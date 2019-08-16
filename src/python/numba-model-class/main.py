@@ -167,3 +167,9 @@ if __name__ == '__main__':
 # CPU: 8  Intel(R) Core(TM) i5-8250U CPU @ 1.60GHz
 # Memory: 7.67529 GB
 
+# LIMITATIONS:
+# - slightly slower than Julia
+# - `fit` method can't have any python objects. So, printing
+#    time stamps can be a pain.
+# - can't use reflection with the jit-compiled `model.state.
+#   So, can't access the parameters in `state` by str fieldname.
