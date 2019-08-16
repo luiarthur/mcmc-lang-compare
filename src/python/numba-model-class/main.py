@@ -54,8 +54,9 @@ class StateTuner():
         self.b2 = mcmc.Tuner(init_proposal_sd)
 
 
-# The following three classes are Mixins.
+# The following three classes are mix-ins.
 # Note there is no data, i.e. `__init__()`, in this method.
+# This allows me to break up the `Model` class into smaller chunks.
 class Update_b0():
     def logprob_b0(self, b0):
         return self.loglike(b0, self.state.b1, self.state.b2) + self.prior.lpdf(b0)
@@ -87,10 +88,13 @@ model_spec = [('state', State.class_type.instance_type),
 
 @numba.jitclass(model_spec)
 class Model(Update_b0, Update_b1, Update_b2):
-    def __init__(self, init, data, init_proposal_sd):
+    def __init__(self, init, data, init_proposal_sd, prior=None):
         self.state = init
         self.data = data
-        self.prior = dist.Normal(0, 10)
+
+        if prior is None:
+            self.prior = dist.Normal(0, 10)
+
         self.tuners = StateTuner(init_proposal_sd)
     
 
@@ -160,3 +164,6 @@ if __name__ == '__main__':
 #       outside of `Model` for more flexibility
 #     - or compose with a regular python class that has
 #       a generic `fit` method.
+#     - As a general rule, just put computational things
+#       in the jitclass. Everything else can be tacked
+#       on by composing with other pieces.
