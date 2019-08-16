@@ -107,22 +107,6 @@ class Model(Update_b0, Update_b1, Update_b2):
         return ll.sum()
  
 
-    def fit(self, niter=1000, nburn=1000, print_freq=100):
-        out = []
-
-        for i in range(niter + nburn):
-            if (i + 1) % print_freq == 0:
-                print(i + 1, '/', (niter + nburn))
-
-            self.update()
-            curr = {'b0': self.state.b0, 'b1': self.state.b1, 'b2': self.state.b2}
-
-            if i >= nburn:
-                out.append(curr)
-        
-        return out
- 
-
 if __name__ == '__main__':
     # Path to simulated data
     path_to_simdat = '../../../dat/dat.txt'
@@ -134,20 +118,21 @@ if __name__ == '__main__':
     N = x.shape[0]
     
     # COMPILE
-    model = Model(State(0, 0, 0), Data(x, y), 0.1)
-    _ = model.fit(1, 1, 10)
+    _model = Model(State(0, 0, 0), Data(x, y), 0.1)
+    model = mcmc.Gibbs(_model)
+    _ = model.fit(1, 1)
 
     with Timer.Timer("MCMC", digits=3):
-        out = model.fit(1000, 1000, 100)
+        out = model.fit(niter=1000, nburn=1000)
     print('Done')
 
     b0 = np.array([s['b0'] for s in out])
     b1 = np.array([s['b1'] for s in out])
     b2 = np.array([s['b2'] for s in out])
     
-    B = len(out)
+    # B = len(out)
     M = 200
-    xx = np.linspace(-4, 4, 100)
+    xx = np.linspace(-4, 4, M)
     p = mcmc.sigmoid(b0[:, None] + b1[:, None] * xx[None, :]
                      + b2[:, None] * xx[None, :] ** 2)
 
@@ -168,8 +153,10 @@ if __name__ == '__main__':
 # Memory: 7.67529 GB
 
 # LIMITATIONS:
-# - slightly slower than Julia
+# - a littleslower than Julia
 # - `fit` method can't have any python objects. So, printing
 #    time stamps can be a pain.
-# - can't use reflection with the jit-compiled `model.state.
-#   So, can't access the parameters in `state` by str fieldname.
+#     - a workaround would be to write a `fit` method
+#       outside of `Model` for more flexibility
+#     - or compose with a regular python class that has
+#       a generic `fit` method.
