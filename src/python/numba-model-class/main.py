@@ -137,8 +137,9 @@ if __name__ == '__main__':
     # B = len(out)
     M = 200
     xx = np.linspace(-4, 4, M)
-    p = mcmc.sigmoid(b0[:, None] + b1[:, None] * xx[None, :]
-                     + b2[:, None] * xx[None, :] ** 2)
+    p = mcmc.sigmoid(b0[:, None] +
+                     b1[:, None] * xx[None, :] +
+                     b2[:, None] * xx[None, :] ** 2)
 
     # Plots
     plt.plot(xx, p.mean(0), label='est')
