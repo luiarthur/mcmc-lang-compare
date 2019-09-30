@@ -1,7 +1,7 @@
 import numba
 import numpy as np
 import distributions
-from tqdm import tqdm
+from tqdm import trange
 
 ### Metropolis Tuner ###
 tuner_spec = [
@@ -156,7 +156,7 @@ class Gibbs():
 
         out = []
 
-        for i in tqdm(range(niter + nburn)):
+        for i in trange(niter + nburn):
             self.model.update()
 
             if i >= nburn:
