@@ -1,7 +1,7 @@
 import numba
 import numpy as np
 
-### Normal Distributions ###
+### Normal Distribution ###
 normal_spec = [
     ('m', numba.float64),
     ('s', numba.float64),
@@ -26,7 +26,7 @@ class Normal():
     def var(self):
         return self.s ** 2
 
-### Gamma Distributions ###
+### Gamma Distribution ###
 gamma_spec = [
     ('shape', numba.float64),
     ('rate', numba.float64),
@@ -55,7 +55,7 @@ class Gamma():
         return np.sqrt(self.var())
 
 
-### Inverse Gamma Distributions ###
+### Inverse Gamma Distribution ###
 inversegamma_spec = [
     ('shape', numba.float64),
     ('scale', numba.float64),
@@ -90,7 +90,7 @@ class InvGamma():
         return np.sqrt(self.var())
 
 
-### Beta Distributions ###
+### Beta Distribution ###
 beta_spec = [
     ('a', numba.float64),
     ('b', numba.float64),
@@ -117,3 +117,60 @@ class Beta():
 
     def std(self):
         return np.sqrt(self.var())
+
+
+### Dirichlet Distribution ###
+dirichlet_spec = [
+    ('conc', numba.float64[:]),
+]
+
+
+@numba.njit
+def log_beta_fn_vec(a):
+    sum_lgamma_a = 0.
+
+    for ai in a: 
+        sum_lgamma_a += np.math.lgamma(ai)
+
+    return sum_lgamma_a - np.math.lgamma(a.sum()) 
+
+
+@numba.jitclass(dirichlet_spec)
+class Dirichlet():
+    def __init__(self, conc):
+        assert np.all(conc > 0)
+        self.conc = conc
+    
+    @property
+    def size(self):
+        return self.conc.size
+
+    def lpdf(self, x):
+        return (self.conc - 1) * np.log(x) - log_beta_fn_vec(self.conc)
+
+    def mean(self):
+        return self.conc / self.conc.sum()
+
+    def var(self):
+        a0 = self.conc.sum()
+        a = self.conc / a0
+        var_x = a * (1 - a) / (a0 + 1)
+
+        n = self.size
+        cov_mat = np.zeros((n, n))
+        np.fill_diagonal(cov_mat, var_x)
+
+        for i in range(n):
+            for j in range(i):
+                c = -a[i] * a[j] / (a0 + 1)
+                cov_mat[i, j] = c
+                cov_mat[j, i] = c
+
+        return cov_mat
+
+# TODO: CLEAN
+# a = np.array([1., 2., 3.])
+# d = Dirichlet(a)
+# d.lpdf(np.array([.1, .1, .8]))
+# d.mean()
+# d.var()
