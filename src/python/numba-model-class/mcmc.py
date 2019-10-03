@@ -61,7 +61,7 @@ def metropolis_base(x, log_prob, proposal_sd):
 
 @numba.njit
 def metropolis(x, log_prob, proposal_sd):
-    return metropolis_base[0]
+    return metropolis_base(x, log_prob, proposal_sd)[0]
 
 
 @numba.njit

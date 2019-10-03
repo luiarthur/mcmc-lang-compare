@@ -41,7 +41,6 @@ class Tuner():
                 self.proposal_sd /= factor
             self.acceptance_count = 0
 
-@numba.jit
 def metropolis_base(x, log_prob, proposal_sd):
     proposal = proposal_sd * np.random.randn() + x
     acceptance_log_prob = log_prob(proposal) - log_prob(x)
@@ -50,11 +49,9 @@ def metropolis_base(x, log_prob, proposal_sd):
         x = proposal
     return x, accept
     
-@numba.jit
 def metropolis(x, log_prob, proposal_sd):
-    return metropolis_base[0]
+    return metropolis_base(x, log_prob, proposal_sd)[0]
 
-@numba.jit
 def ametropolis(x, log_prob, tuner):
     """
     adaptive metropolis
@@ -85,7 +82,6 @@ def log_jacobian_log_x(log_x, x):
 def log_jacobian_logit_x(logit_x, x):
     return np.log(x) + np.log1p(-x)
 
-@numba.njit
 def ametropolis_transformed_var(x, to_real, to_x, log_prob, log_jacobian, tuner):
     real_x = to_real(x)
 
@@ -104,12 +100,10 @@ def ametropolis_transformed_var(x, to_real, to_x, log_prob, log_jacobian, tuner)
 
     return x
 
-@numba.njit
 def ametropolis_positive_var(x, log_prob, tuner):
     return ametropolis_transformed_var(x, np.log, np.exp,
                                        log_prob, log_jacobian_log_x, tuner)
 
-@numba.njit
 def ametropolis_unit_var(x, log_prob, tuner):
     return ametropolis_transformed_var(x, logit, sigmoid,
                                        log_prob, log_jacobian_logit_x, tuner)

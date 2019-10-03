@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import distributions as dist
 import mcmc
 import Timer
+from tqdm import trange
 
 def read_simdat(path_to_simdat):
     with open(path_to_simdat, "r") as f:
@@ -86,8 +87,7 @@ def log_prob_b2(b2, state, data):
 
 
 def update_b0(state, data, tuner_b0):
-    def log_prob(b0):
-        return log_prob_b0(b0, state, data)
+    log_prob = lambda b0: log_prob_b0(b0, state, data)
     state.b0 = mcmc.ametropolis(state.b0, log_prob, tuner_b0)
 
 def update_b1(state, data, tuner_b1):
@@ -109,12 +109,7 @@ def fit(init, data, niter=1000, burn=1000, print_freq=100):
     state = init
 
     out = []
-    for i in range(niter + burn):
-        if (i + 1) % print_freq == 0:
-            print('\r{}/{}'.format(i+1, niter+burn), end='')
-        if i + 1 == (niter + burn):
-            print()
-
+    for i in trange(niter + burn):
         update_b0(state, data, tuner_b0)
         update_b1(state, data, tuner_b1)
         update_b2(state, data, tuner_b2)
