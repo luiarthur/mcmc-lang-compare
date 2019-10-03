@@ -1,7 +1,7 @@
 import numba
 import numpy as np
 
-### Normal Distribution ###
+### Normal Distributions ###
 normal_spec = [
     ('m', numba.float64),
     ('s', numba.float64),
@@ -26,7 +26,14 @@ class Normal():
     def var(self):
         return self.s ** 2
 
-### Gamma Distribution ###
+    def sample(self):
+        return np.random.normal(self.m, self.s)
+
+    def samples(self, size):
+        return np.random.normal(self.m, self.s, size=size)
+
+
+### Gamma Distributions ###
 gamma_spec = [
     ('shape', numba.float64),
     ('rate', numba.float64),
@@ -54,8 +61,14 @@ class Gamma():
     def std(self):
         return np.sqrt(self.var())
 
+    def sample(self):
+        return np.random.gamma(self.shape, self.scale)
 
-### Inverse Gamma Distribution ###
+    def samples(self, size):
+        return np.random.gamma(self.shape, self.scale, size=size)
+
+
+### Inverse Gamma Distributions ###
 inversegamma_spec = [
     ('shape', numba.float64),
     ('scale', numba.float64),
@@ -89,8 +102,13 @@ class InvGamma():
     def std(self):
         return np.sqrt(self.var())
 
+    def sample(self):
+        return 1 / np.random.gamma(self.shape, 1/self.scale)
 
-### Beta Distribution ###
+    def samples(self, size):
+        return 1 / np.random.gamma(self.shape, 1/self.scale, size=size)
+
+### Beta Distributions ###
 beta_spec = [
     ('a', numba.float64),
     ('b', numba.float64),
@@ -107,7 +125,9 @@ class Beta():
         self.b = b
 
     def lpdf(self, x):
-        return (self.a - 1) * np.log(x) + (self.b - 1) * np.log1p(-x) - log_beta_fn(self.a, self.b)
+        out = (self.a - 1) * np.log(x) + (self.b - 1) * np.log1p(-x) 
+        out -= log_beta_fn(self.a, self.b)
+        return out
 
     def mean(self):
         return self.a / (self.a + self.b)
@@ -117,6 +137,12 @@ class Beta():
 
     def std(self):
         return np.sqrt(self.var())
+
+    def sample(self):
+        return np.random.beta(self.a, self.b)
+
+    def samples(self, size):
+        return np.random.beta(self.a, self.b, size=size)
 
 
 ### Dirichlet Distribution ###
@@ -168,9 +194,18 @@ class Dirichlet():
 
         return cov_mat
 
-# TODO: CLEAN
-# a = np.array([1., 2., 3.])
-# d = Dirichlet(a)
-# d.lpdf(np.array([.1, .1, .8]))
-# d.mean()
-# d.var()
+    def sample(self):
+        # Dirichlet of dimension K, is the ratio between
+        # each gamma and their sum.
+        w = np.array([np.random.gamma(c, 1.) for c in self.conc])
+        return w / w.sum()
+
+    def samples(self, size):
+        # Preallocate output. Each row is a Dirichlet.
+        samps = np.empty((size, self.size))
+
+        # Fill each row of the output matrix with a Dirichlet realization.
+        for i in range(size):
+            samps[i, :] = self.sample()
+
+        return samps
