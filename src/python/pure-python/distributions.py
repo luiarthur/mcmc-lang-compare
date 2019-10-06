@@ -1,3 +1,5 @@
+# NOTE:
+# Even without numba, this is slighly faster than numba.
 import numpy as np
 
 class Normal():

@@ -1,10 +1,11 @@
 import numpy as np
 import matplotlib.pyplot as plt
-import distributions as dist
+from scipy import stats
 import mcmc
 import Timer
 import copy
 from tqdm import trange
+
 
 def read_simdat(path_to_simdat):
     with open(path_to_simdat, "r") as f:
@@ -46,7 +47,7 @@ class Model:
     def __init__(self, init, data, init_proposal_sd):
         self.state = init
         self.data = data
-        self.prior = dist.Normal(0, 10)
+        self.prior = stats.norm(0, 10)
         self.tuners = StateTuner(init_proposal_sd)
     
     def update(self):
@@ -63,7 +64,7 @@ class Model:
     # b0
     def logprob_b0(self, b0):
         ll = self.loglike(b0, self.state.b1, self.state.b2)
-        lp = self.prior.lpdf(b0)
+        lp = self.prior.logpdf(b0)
         return ll + lp
 
     def update_b0(self):
@@ -74,7 +75,7 @@ class Model:
     # b1
     def logprob_b1(self, b1):
         ll = self.loglike(self.state.b0, b1, self.state.b2)
-        lp = self.prior.lpdf(b1)
+        lp = self.prior.logpdf(b1)
         return ll + lp
 
     def update_b1(self):
@@ -85,7 +86,7 @@ class Model:
     # b2
     def logprob_b2(self, b2):
         ll = self.loglike(self.state.b0, self.state.b1, b2)
-        lp = self.prior.lpdf(b2)
+        lp = self.prior.logpdf(b2)
         return ll + lp
 
 
@@ -95,7 +96,7 @@ class Model:
                                          self.tuners.b2)
   
 
-    def fit(self, niter=1000, nburn=1000)
+    def fit(self, niter=1000, nburn=1000):
         out = []
 
         for i in trange(niter + nburn):
