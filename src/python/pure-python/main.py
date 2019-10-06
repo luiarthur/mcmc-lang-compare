@@ -4,6 +4,7 @@ import distributions as dist
 import mcmc
 import Timer
 import copy
+from tqdm import trange
 
 def read_simdat(path_to_simdat):
     with open(path_to_simdat, "r") as f:
@@ -19,27 +20,29 @@ def read_simdat(path_to_simdat):
             p.append(float(pn))
         return {'x': x, 'y': y, 'p': p}
 
-class State():
+
+class State:
     def __init__(self, b0, b1, b2):
         self.b0 = b0
         self.b1 = b1
         self.b2 = b2
 
-class Data():
+
+class Data:
     def __init__(self, x, y):
         self.x = x
         self.y = y
         self.N = x.shape[0]
 
 
-class StateTuner():
+class StateTuner:
     def __init__(self, init_proposal_sd):
         self.b0 = mcmc.Tuner(init_proposal_sd)
         self.b1 = mcmc.Tuner(init_proposal_sd)
         self.b2 = mcmc.Tuner(init_proposal_sd)
 
 
-class Model():
+class Model:
     def __init__(self, init, data, init_proposal_sd):
         self.state = init
         self.data = data
@@ -59,41 +62,53 @@ class Model():
 
     # b0
     def logprob_b0(self, b0):
-        return self.loglike(b0, self.state.b1, self.state.b2) + self.prior.lpdf(b0)
+        ll = self.loglike(b0, self.state.b1, self.state.b2)
+        lp = self.prior.lpdf(b0)
+        return ll + lp
 
     def update_b0(self):
-        self.state.b0 = mcmc.ametropolis(self.state.b0, self.logprob_b0, self.tuners.b0)
+        self.state.b0 = mcmc.ametropolis(self.state.b0,
+                                         self.logprob_b0,
+                                         self.tuners.b0)
         
     # b1
     def logprob_b1(self, b1):
-        return self.loglike(self.state.b0, b1, self.state.b2) + self.prior.lpdf(b1)
+        ll = self.loglike(self.state.b0, b1, self.state.b2)
+        lp = self.prior.lpdf(b1)
+        return ll + lp
 
     def update_b1(self):
-        self.state.b1 = mcmc.ametropolis(self.state.b1, self.logprob_b1, self.tuners.b1)
+        self.state.b1 = mcmc.ametropolis(self.state.b1,
+                                         self.logprob_b1,
+                                         self.tuners.b1)
 
     # b2
     def logprob_b2(self, b2):
-        return self.loglike(self.state.b0, self.state.b1, b2) + self.prior.lpdf(b2)
+        ll = self.loglike(self.state.b0, self.state.b1, b2)
+        lp = self.prior.lpdf(b2)
+        return ll + lp
 
 
     def update_b2(self):
-        self.state.b2 = mcmc.ametropolis(self.state.b2, self.logprob_b2, self.tuners.b2)
+        self.state.b2 = mcmc.ametropolis(self.state.b2,
+                                         self.logprob_b2,
+                                         self.tuners.b2)
   
-    def fit(self, niter=1000, nburn=1000, print_freq=100):
+
+    def fit(self, niter=1000, nburn=1000)
         out = []
 
-        for i in range(niter + nburn):
-            if (i + 1) % print_freq == 0:
-                print('{}/{}'.format(i + 1, (niter + nburn)))
+        for i in trange(niter + nburn):
 
             self.update()
-            curr = {'b0': self.state.b0, 'b1': self.state.b1, 'b2': self.state.b2}
+            curr = {'b0': self.state.b0,
+                    'b1': self.state.b1,
+                    'b2': self.state.b2}
 
             if i >= nburn:
                 out.append(curr)
         
         return out
- 
  
 
 if __name__ == '__main__':
@@ -108,10 +123,9 @@ if __name__ == '__main__':
     
     # COMPILE
     model = Model(State(0, 0, 0), Data(x, y), 0.1)
-    _ = model.fit(1, 1, 10)
 
     with Timer.Timer("MCMC", digits=3):
-        out = model.fit(1000, 1000, 100)
+        out = model.fit(niter=1000, nburn=1000)
     print('Done')
 
     b0 = np.array([s['b0'] for s in out])
@@ -121,7 +135,8 @@ if __name__ == '__main__':
     B = len(out)
     M = 200
     xx = np.linspace(-4, 4, 100)
-    p = mcmc.sigmoid(b0[:, None] + b1[:, None] * xx[None, :] + b2[:, None] * xx[None, :] ** 2)
+    p = mcmc.sigmoid(b0[:, None] + b1[:, None] * xx[None, :] + 
+                     b2[:, None] * xx[None, :] ** 2)
 
     # Plots
     plt.plot(xx, p.mean(0), label='est')
