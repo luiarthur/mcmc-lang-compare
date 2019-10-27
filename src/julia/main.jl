@@ -110,10 +110,9 @@ end
 end # Model
 
 ### MAIN ###
-include("MCMC/MCMC.jl")
 using Distributions
-using PyCall
-plt = pyimport("matplotlib.pyplot")
+using PyPlot
+const plt = PyPlot.plt
 
 quantiles(x, p; dims) = mapslices(xd -> quantile(xd, p), x, dims=dims)
 
@@ -128,7 +127,7 @@ b1 = reshape([s.b1 for s in out], B, 1)
 b2 = reshape([s.b2 for s in out], B, 1)
 M = 200
 x = reshape(range(-4, stop=4, length=M), 1, M)
-p = MCMC.sigmoid.(b0 .+ b1 .* x .+ b2 .* x .^ 2)
+p = Model.MCMC.sigmoid.(b0 .+ b1 .* x .+ b2 .* x .^ 2)
 plt.plot(vec(x), vec(mean(p, dims=1)))
 plt.plot(vec(x), vec(quantiles(p, .975, dims=1)), linestyle="--")
 plt.plot(vec(x), vec(quantiles(p, .025, dims=1)), linestyle="--")
