@@ -1,28 +1,11 @@
 import numba
 import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
 import distributions as dist
 import mcmc
 import Timer
 import copy
-
-
-def read_simdat(path_to_simdat):
-    with open(path_to_simdat, "r") as f:
-        header = f.readline()
-        lines = f.readlines()
-
-        x = []
-        y = []
-        p = []
-
-        for line in lines:
-            xn, yn, pn = line.split(',')
-            x.append(float(xn))
-            y.append(float(yn))
-            p.append(float(pn))
-
-        return {'x': x, 'y': y, 'p': p}
 
 
 state_spec = [('b0', numba.float64), ('b1', numba.float64), ('b2', numba.float64)]
@@ -116,9 +99,9 @@ if __name__ == '__main__':
     path_to_simdat = '../../../dat/dat.txt'
 
     # Read simulated data
-    simdat = read_simdat(path_to_simdat)
-    x = np.array(simdat['x'])
-    y = np.array(simdat['y'])
+    simdat = pd.read_csv(path_to_simdat)
+    x = simdat.x.to_numpy()
+    y = simdat.y.to_numpy(dtype=float)
     N = x.shape[0]
     
     # COMPILE
@@ -145,9 +128,9 @@ if __name__ == '__main__':
     plt.plot(xx, p.mean(0), label='est')
     plt.plot(xx, np.quantile(p, .975, axis=0), linestyle='--')
     plt.plot(xx, np.quantile(p, .025, axis=0), linestyle='--')
-    plt.scatter(simdat['x'][::100], simdat['p'][::100], label='true', s=5)
-    plt.scatter(simdat['x'],
-                simdat['y'] + np.random.randn(len(simdat['y'])) * .01,
+    plt.scatter(simdat.x[::100], simdat.p_true[::100], label='true', s=5)
+    plt.scatter(simdat.x,
+                simdat.y + np.random.randn(len(simdat.y)) * .01,
                 label='data', s=5, alpha=.1)
     plt.legend()
     plt.show()
