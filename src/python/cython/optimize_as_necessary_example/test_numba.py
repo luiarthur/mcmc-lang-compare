@@ -28,6 +28,6 @@ def test_metropolis(n):
 # Compile
 test_metropolis(1 * 1)
 
-with Timer(digits=6):
+with Timer('test_metropolis (numba)', digits=6):
     x = test_metropolis(1000 * 1000)
     print(x)

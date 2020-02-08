@@ -14,5 +14,5 @@ with Timer(digits=6):
     np.random.randn(100 * 100).sum()
 
 
-with Timer(digits=6):
+with Timer('test_metropolis (cython)', digits=6):
     mcmc.test_metropolis(1000 * 1000)
