@@ -10,7 +10,7 @@ class Tuner():
         self.target_acceptance_rate = 0.44 
 
     def delta(self, n):
-        return np.minimum(n ** (-0.5), 0.01)
+        return np.maximum(n ** (-0.5), 0.01)
 
     def acceptance_rate(self):
         return self.acceptance_count / self.batch_size
