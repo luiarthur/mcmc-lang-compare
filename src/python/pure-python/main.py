@@ -123,7 +123,7 @@ if __name__ == '__main__':
     N = x.shape[0]
     
     # COMPILE
-    model = Model(State(0, 0, 0), Data(x, y), 0.1)
+    model = Model(State(0, 0, 0), Data(x, y), 1)
 
     with Timer.Timer("MCMC", digits=3):
         out = model.fit(niter=1000, nburn=1000)
